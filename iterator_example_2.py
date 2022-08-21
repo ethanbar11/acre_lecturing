@@ -20,7 +20,13 @@ class MyNumbers:
             raise StopIteration()
 #
 
+
+class Range:
+    def __init__(self,end,start=0,jump=1):
+        pass
+
 numbers = MyNumbers()
 print(set(numbers))
+range
 # for i in numbers:
 #     print(i)
