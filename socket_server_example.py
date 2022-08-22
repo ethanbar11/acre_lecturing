@@ -26,7 +26,7 @@ class Server:
             else:
                 print('CLIENT: ' + message)
 
-    def listen(self):
+    def listen223(self):
         self.listening_socket.listen()
         self.client_socket, addr = self.listening_socket.accept()
         self.connected_to_client = True
@@ -43,7 +43,7 @@ class Server:
 
 if __name__ == '__main__':
     server = Server()
-    server.listen()
+    server.listen223()
     while server.connected_to_client:
         message = input('Please enter a message to send to the client: ')
         server.send_to_client(message)
