@@ -10,41 +10,40 @@ class Server:
         PORT = 65432  # Port to listen on (non-privileged ports are > 1023)
         self.listening_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.listening_socket.bind((HOST, PORT))
-        self.client_socket = None
-        self.connected_to_client = False
+        self.client_sockets = []
+        self.should_listen = True
 
-    def send_to_client(self, message):
-        # If this is False it throws an exception.
-        assert self.connected_to_client
-        self.client_socket.sendall(message.encode('utf-8'))
+    def receiving_from_client(self, index):
+        while self.should_listen:
+            print('Received message.')
+            message = self.client_sockets[index].recv(MAX_MESSAGE_LENGTH)
 
-    def receiving_from_client(self):
-        while self.connected_to_client:
-            message = self.client_socket.recv(MAX_MESSAGE_LENGTH).decode('utf-8')
+            # If message is None meaning the client disconnected.
             if message is None:
-                self.connected_to_client = False
+                del self.client_sockets[index]
+                break
             else:
-                print('CLIENT: ' + message)
+                for socket in self.client_sockets:
+                    socket.sendall(message)
 
-    def listen223(self):
+    def listen(self):
+        print('Started listening')
+        # I'm calling this function only once
+        # this calling means this is a listening socket.
         self.listening_socket.listen()
-        self.client_socket, addr = self.listening_socket.accept()
-        self.connected_to_client = True
+        while True:
+            new_socket, addr = self.listening_socket.accept()
+            print('New client added : {}'.format(addr))
 
-        # I'm opening here a thread that is going to receive messages from the client
-        # all the time until the connection is closed.
-        t = threading.Thread(target=self.receiving_from_client)
-        t.start()
+            self.client_sockets.append(new_socket)
+            index_of_socket = len(self.client_sockets) - 1
 
-    def close(self):
-        self.client_socket.close()
-        self.listening_socket.close()
+            # I'm opening here a thread that is going to receive messages from the client
+            # all the time until the connection is closed.
+            t = threading.Thread(target=self.receiving_from_client, args=(index_of_socket,))
+            t.start()
 
 
 if __name__ == '__main__':
     server = Server()
-    server.listen223()
-    while server.connected_to_client:
-        message = input('Please enter a message to send to the client: ')
-        server.send_to_client(message)
-    server.close()
+    server.listen()
